@@ -14,6 +14,8 @@ export default function Home() {
   const [touchOffset, setTouchOffset] = useState(0);
 
   useEffect(() => {
+      console.log("BACKEND_URL:", BACKEND_URL);
+  console.log("Sending request to start session:", `${BACKEND_URL}/start/${sid}`);
     const sid = getSessionId();
     fetch(`${BACKEND_URL}/start/${sid}`)
       .then(res => res.json())
