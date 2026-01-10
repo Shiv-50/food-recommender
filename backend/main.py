@@ -3,6 +3,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from recommender import SwipeBrain
 from utils.db import get_conn
 import uuid
+from fastapi.responses import FileResponse
+import pathlib
 
 app = FastAPI()
 
@@ -14,10 +16,16 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+BASE_DIR = pathlib.Path(__file__).parent
+
 # ---------------- Persistent connections per session ----------------
 session_conns = {}
 
 # ------------------- Start Session -------------------
+@app.get("/favicon.ico")
+def favicon():
+    return FileResponse(BASE_DIR / "favicon.ico")
+
 @app.get("/start/{sid}")
 def start_session(sid:str):
     
