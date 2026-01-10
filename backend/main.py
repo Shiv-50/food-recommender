@@ -22,6 +22,10 @@ BASE_DIR = pathlib.Path(__file__).parent
 session_conns = {}
 
 # ------------------- Start Session -------------------
+@app.get("/")
+def root():
+    return {"message": "Backend is running"}
+
 @app.get("/favicon.ico")
 def favicon():
     return FileResponse(BASE_DIR / "favicon.ico")
