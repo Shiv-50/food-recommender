@@ -231,7 +231,7 @@ python-multipart==0.0.20
 python-oxmsg==0.0.1
 python-ptrace==0.9.9
 pytz==2024.1
-pywin32==306
+pywin32==306; sys_platform == 'win32'
 pywinpty==2.0.13
 pyxnat==1.6.2
 PyYAML==6.0.2
