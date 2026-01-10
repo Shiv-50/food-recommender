@@ -15,8 +15,9 @@ export default function Home() {
 
   useEffect(() => {
       console.log("BACKEND_URL:", BACKEND_URL);
-  console.log("Sending request to start session:", `${BACKEND_URL}/start/${sid}`);
+ 
     const sid = getSessionId();
+     console.log("Sending request to start session:", `${BACKEND_URL}/start/${sid}`);
     fetch(`${BACKEND_URL}/start/${sid}`)
       .then(res => res.json())
       .then(() => fetchNext());
