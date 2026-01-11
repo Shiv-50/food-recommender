@@ -1,7 +1,12 @@
 "use client";
 import { useEffect, useState } from "react";
 import { Recommendation } from "@/types";
-import { getSessionId, resetSession } from "@/lib/session";
+import { getSessionId } from "@/lib/session";
+import { useRouter } from "next/navigation";
+
+
+
+
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8000";
 
 
@@ -9,15 +14,15 @@ export default function Home() {
   const [items, setItems] = useState<Recommendation[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [loading, setLoading] = useState(true);
-  const [swipeDirection, setSwipeDirection] = useState<"left" | "right" | null>(null);
+  const [swipeDirection, setSwipeDirection] = useState<"left" | "right" | "super" |null>(null);
   const [touchStart, setTouchStart] = useState<number | null>(null);
   const [touchOffset, setTouchOffset] = useState(0);
+  const router = useRouter();
 
   useEffect(() => {
-      console.log("BACKEND_URL:", BACKEND_URL);
- 
+  
     const sid = getSessionId();
-     console.log("Sending request to start session:", `${BACKEND_URL}/start/${sid}`);
+  
     fetch(`${BACKEND_URL}/start/${sid}`)
       .then(res => res.json())
       .then(() => fetchNext());
@@ -40,7 +45,7 @@ export default function Home() {
       });
   };
 
-  const swipe = (action: "left" | "right") => {
+  const swipe = (action: "left" | "right" | "super") => {
     const item = items[currentIndex];
     if (!item) return;
     
@@ -51,6 +56,8 @@ export default function Home() {
     fetch(`${BACKEND_URL}/swipe/${sid}/${item.id}/${action}?item_type=${type}`, {
       method: "POST",
     }).then(() => {
+      if(action == "super")
+        return
       setTimeout(() => {
         setSwipeDirection(null);
         if (currentIndex + 1 < items.length) setCurrentIndex(currentIndex + 1);
@@ -59,12 +66,19 @@ export default function Home() {
     });
   };
 
-  const superSwipe = () => {
+  const superSwipe = async () => {
+    const item = items[currentIndex];
+    if (!item) return;
+
     const sid = getSessionId();
-    fetch(`${BACKEND_URL}/super/${sid}`, { method: "POST" }).then(() => {
-      resetSession();
-      location.reload();
+    const type = encodeURIComponent(item.type);
+
+    await fetch(`${BACKEND_URL}/swipe/${sid}/${item.id}/super?item_type=${type}`, {
+      method: "POST",
     });
+
+    router.push("/session_stats");
+
   };
 
   // Touch handlers
@@ -115,7 +129,7 @@ export default function Home() {
             onClick={superSwipe}
             className="bg-gradient-to-r from-orange-500 to-pink-500 text-white px-8 py-3 rounded-full font-semibold hover:shadow-lg transition-all transform hover:scale-105"
           >
-            🔄 Start Over
+            &#x2B06; Super Swipe
           </button>
         </div>
       </div>
@@ -223,7 +237,7 @@ export default function Home() {
             onClick={superSwipe}
             className="bg-gradient-to-r from-yellow-400 to-orange-400 text-white w-16 h-16 rounded-full shadow-lg hover:shadow-xl transition-all transform hover:scale-110 flex items-center justify-center text-2xl"
           >
-            🔄
+            &#x2B06;
           </button>
           <button
             onClick={() => swipe("right")}
