@@ -247,11 +247,11 @@ class SwipeBrain:
                 super = cur.fetchone()
 
             insights = generate_taste_insight(liked_foods, liked_categories,disliked_foods, disliked_categories,super)
-            return insights
+            return insights, super[0]
 
     def get_stats(self) :
         stats = {}
-        stats['total_swipes'] = 0
+        stats['total_swipes'] = 1
         with self.conn.cursor() as cur:
 
             cur.execute("""
@@ -294,6 +294,6 @@ class SwipeBrain:
                 stats['right_swipes'] = right_swipes
                 stats['total_swipes'] += right_swipes
             
-            stats['insights'] = self.get_insights()
+            stats['insights'],stats['super_food'] = self.get_insights()
             
             return stats    

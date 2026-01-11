@@ -81,6 +81,7 @@ if (loading) {
 
     const leftPercent = stats.total_swipes > 0 ? (stats.left_swipes / stats.total_swipes) * 100 : 0;
     const rightPercent = stats.total_swipes > 0 ? (stats.right_swipes / stats.total_swipes) * 100 : 0;
+    const superPercent = stats.total_swipes > 0 ? (1 / stats.total_swipes) * 100 : 0;
 
     return (
         <div className="min-h-screen bg-gradient-to-b from-orange-50 to-amber-50 p-6 flex items-center justify-center">
@@ -103,7 +104,9 @@ if (loading) {
                 {/* Visual Bar Chart */}
                 <div className="bg-white rounded-3xl shadow-lg p-6 mb-6 border-2 border-orange-200">
                     <p className="text-orange-900 font-semibold mb-4 text-center">Your Taste Breakdown</p>
-                    
+                    <div className="p-2 ">
+                        <p className="bg-gradient-to-l from-yellow-400 to-orange-400 bg-clip-text text-transparent font-bold ">⭐ {stats.super_food}</p>
+                    </div>
                     {/* Horizontal stacked bar */}
                     <div className="relative h-20 bg-gray-100 rounded-full overflow-hidden mb-6">
                         <div 
@@ -114,13 +117,24 @@ if (loading) {
                                 <span className="text-white font-bold text-lg">😝 {leftPercent.toFixed(0)}%</span>
                             )}
                         </div>
+
+                     
                         <div 
-                            className="absolute right-0 top-0 h-full bg-gradient-to-l from-green-400 to-green-500 flex items-center justify-center transition-all duration-700"
-                            style={{ width: `${rightPercent}%` }}
+                            className="absolute left-0 top-0 h-full bg-gradient-to-l from-green-400 to-green-500 flex items-center justify-center transition-all duration-700"
+                            style={{ width: `${rightPercent}%`, left: `${leftPercent}%` }}
                         >
                             {rightPercent > 15 && (
                                 <span className="text-white font-bold text-lg">😋 {rightPercent.toFixed(0)}%</span>
                             )}
+                        </div>
+                         <div 
+                                className="absolute right-0 top-0 h-full bg-gradient-to-r from-yellow-400 to-orange-400 flex items-center justify-center transition-all duration-700"
+                                style={{ 
+                                    width: `${superPercent}%`,
+                                    
+                                }}
+                            >
+                                <span className="text-white font-bold text-lg">⭐</span>
                         </div>
                     </div>
 
@@ -133,13 +147,13 @@ if (loading) {
                                     <span className="text-2xl">😝</span>
                                     <span className="font-semibold text-gray-700">Nope</span>
                                 </div>
-                                <span className="font-bold text-red-500 text-xl">{stats.left_swipes}</span>
+                                <span className="font-bold text-red-500 text-xl">{stats.left_swipes || 0}</span>
                             </div>
                             <div className="h-3 bg-gray-100 rounded-full overflow-hidden">
-                                <div 
+                                {leftPercent>0 && (<div 
                                     className="h-full bg-gradient-to-r from-red-400 to-red-500 rounded-full transition-all duration-700"
                                     style={{ width: `${leftPercent}%` }}
-                                ></div>
+                                ></div>)}
                             </div>
                         </div>
 
@@ -150,13 +164,13 @@ if (loading) {
                                     <span className="text-2xl">😋</span>
                                     <span className="font-semibold text-gray-700">Yum!</span>
                                 </div>
-                                <span className="font-bold text-green-500 text-xl">{stats.right_swipes}</span>
+                                <span className="font-bold text-green-500 text-xl">{stats.right_swipes || 0}</span>
                             </div>
                             <div className="h-3 bg-gray-100 rounded-full overflow-hidden">
-                                <div 
+                                {rightPercent>0 && ( <div 
                                     className="h-full bg-gradient-to-r from-green-400 to-green-500 rounded-full transition-all duration-700"
                                     style={{ width: `${rightPercent}%` }}
-                                ></div>
+                                ></div>)}
                             </div>
                         </div>
                     </div>

@@ -10,4 +10,5 @@ export type Stats = {
   left_swipes: number;
   right_swipes: number;
   insights: string;
+  super_food: string;
 };
