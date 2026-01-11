@@ -1,5 +1,13 @@
 import random
 from utils.insights import generate_taste_insight 
+import math
+
+# At the top of your next() method or as a helper method
+def is_meaningful_vector(vec, threshold=1e-6):
+    """Check if vector has meaningful values (not all near-zero)"""
+    if vec is None:
+        return False
+    return any(abs(x) > threshold for x in vec)
 
 class SwipeBrain:
     def __init__(self, session_id, conn):
@@ -152,7 +160,7 @@ class SwipeBrain:
                 # No unvisited children → fall back to food
 
             # ---------------- Pick food in leaf category ----------------
-            if mem["intent_vector"] is not None:
+            if is_meaningful_vector(mem["intent_vector"]) :
                 cur.execute("""
                     SELECT id, name, key_ingredients
                     FROM food
