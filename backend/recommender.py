@@ -1,4 +1,5 @@
 import random
+from utils.insights import generate_taste_insight 
 
 class SwipeBrain:
     def __init__(self, session_id, conn):
@@ -95,7 +96,13 @@ class SwipeBrain:
                             WHERE session_id=%s
                         """, (self.session_id,))
                         n = cur.fetchone()[0] or 1
-                        factor = 1 if swipe_type == "right" else -1
+                        factor = 0
+                        if swipe_type == "right":
+                            factor = 1
+                        elif swipe_type == "super":
+                            factor = 3
+                        else: 
+                            factor = -1
                         mem["intent_vector"] = [
                             (a*(n-1) + factor*b)/n
                             for a,b in zip(mem["intent_vector"], embedding)
@@ -149,12 +156,12 @@ class SwipeBrain:
                 cur.execute("""
                     SELECT id, name, key_ingredients
                     FROM food
-                    WHERE category_id=%s AND id NOT IN (
+                    WHERE id NOT IN (
                         SELECT food_id FROM session_food WHERE session_id=%s
                     )
                     ORDER BY embedding <-> %s::vector
                     LIMIT 1
-                """, (mem["current_category"], self.session_id, mem["intent_vector"]))
+                """, ( self.session_id, mem["intent_vector"]))
             else:
                 cur.execute("""
                     SELECT id, name, key_ingredients
@@ -175,3 +182,118 @@ class SwipeBrain:
             self._save_memory()
             # Recursively call next to pick a new category
             return self.next()
+    def get_insights(self):
+        insights = ""
+        with self.conn.cursor() as cur:
+            cur.execute("""
+                SELECT c.name
+                FROM session_category sc
+                JOIN categories c ON sc.category_id = c.id
+                WHERE sc.session_id = %s
+                AND sc.swipe_type = 'right';
+                """,(self.session_id,))
+            liked_categories = cur.fetchall()
+
+            cur.execute("""
+                SELECT f.name, f.key_ingredients
+                FROM session_food sf
+                JOIN food f ON sf.food_id = f.id
+                WHERE sf.session_id = %s
+                AND sf.swipe_type = 'right';
+
+                """,(self.session_id,))
+            
+            liked_foods = cur.fetchall()
+
+            cur.execute("""
+                SELECT c.name
+                FROM session_category sc
+                JOIN categories c ON sc.category_id = c.id
+                WHERE sc.session_id = %s
+                AND sc.swipe_type = 'left';
+                """,(self.session_id,))
+            disliked_categories = cur.fetchall()
+
+            cur.execute("""
+                SELECT f.name, f.key_ingredients
+                FROM session_food sf
+                JOIN food f ON sf.food_id = f.id
+                WHERE sf.session_id = %s
+                AND sf.swipe_type = 'left';
+
+                """,(self.session_id,))
+            
+            disliked_foods = cur.fetchall()
+
+            cur.execute("""
+                SELECT f.name, f.key_ingredients
+                FROM session_food sf
+                JOIN food f ON sf.food_id = f.id
+                WHERE sf.session_id = %s
+                AND sf.swipe_type = 'super';
+
+                """,(self.session_id,))
+            super = cur.fetchone()
+            if not super :
+                            
+                cur.execute("""
+                SELECT c.name
+                FROM session_category sc
+                JOIN categories c ON sc.category_id = c.id
+                WHERE sc.session_id = %s
+                AND sc.swipe_type = 'super';
+
+                """,(self.session_id,))
+                super = cur.fetchone()
+
+            insights = generate_taste_insight(liked_foods, liked_categories,disliked_foods, disliked_categories,super)
+            return insights
+
+    def get_stats(self) :
+        stats = {}
+        stats['total_swipes'] = 0
+        with self.conn.cursor() as cur:
+
+            cur.execute("""
+                    SELECT COUNT(*) AS total_left_swipes
+                    FROM (
+                        SELECT 1
+                        FROM session_food
+                        WHERE session_id = %s AND swipe_type = 'left'
+
+                        UNION ALL
+
+                        SELECT 1
+                        FROM session_category
+                        WHERE session_id = %s AND swipe_type = 'left'
+                    ) s
+                """,(self.session_id,self.session_id))
+            result = cur.fetchone()
+            left_swipes = result[0] if result else None
+            if left_swipes:
+                stats['left_swipes'] = left_swipes
+                stats['total_swipes'] += left_swipes
+
+            cur.execute("""
+                    SELECT COUNT(*) AS total_right_swipes
+                    FROM (
+                        SELECT 1
+                        FROM session_food
+                        WHERE session_id = %s AND swipe_type = 'right'
+
+                        UNION ALL
+
+                        SELECT 1
+                        FROM session_category
+                        WHERE session_id = %s AND swipe_type = 'right'
+                    ) s
+                """,(self.session_id,self.session_id))
+            result = cur.fetchone()
+            right_swipes = result[0] if result else None
+            if right_swipes:
+                stats['right_swipes'] = right_swipes
+                stats['total_swipes'] += right_swipes
+            
+            stats['insights'] = self.get_insights()
+            
+            return stats    

@@ -49,18 +49,22 @@ def next_food(sid: str):
     if not conn:
       
         raise HTTPException(status_code=404, detail="Session not found")
-    
-    brain = SwipeBrain(sid, conn)
-    item, item_type = brain.next()
-    if not item:
-      
-        raise HTTPException(status_code=404, detail="No more recommendations")
-    return {
-        "id": item[0],
-        "name": item[1],
-        "ingredients": item[2] if item_type == "food" else [],
-        "type": item_type
-    }
+    try:
+        brain = SwipeBrain(sid, conn)
+        item, item_type = brain.next()
+        if not item:
+        
+            raise HTTPException(status_code=404, detail="No more recommendations")
+        return {
+            "id": item[0],
+            "name": item[1],
+            "ingredients": item[2] if item_type == "food" else [],
+            "type": item_type
+        }
+    except Exception as e:
+       
+        conn.rollback()
+        raise HTTPException(status_code=500, detail=str(e))
 
 # ------------------- Register Swipe -------------------
 @app.post("/swipe/{sid}/{item_id}/{action}")
@@ -72,19 +76,37 @@ def swipe(
 ):
     if action not in ["left", "right", "super"]:
         raise HTTPException(status_code=400, detail="Invalid swipe action")
-    
+    print(item_type)
     conn = session_conns.get(sid)
     if not conn:
         raise HTTPException(status_code=404, detail="Session not found")
-    
-    brain = SwipeBrain(sid, conn)
-    brain.update(item_id, action, item_type)
-    return {"ok": True}
+    try:
+        brain = SwipeBrain(sid, conn)
+        brain.update(item_id, action, item_type)
+        return {"ok": True}
+    except Exception as e:
+        conn.rollback()
+        raise HTTPException(status_code=500, detail=str(e))
 
 # ------------------- End Session -------------------
 @app.post("/super/{sid}")
 def super_swipe(sid: str):
-    conn = session_conns.pop(sid, None)
+    conn = session_conns.get(sid)
+    if not conn:
+    
+        raise HTTPException(status_code=404, detail="Session not found")
+    try:
+        brain = SwipeBrain(sid, conn)
+
+        stats = brain.get_stats()
+        return stats
+    except Exception as e:
+        conn.rollback()
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/end_session/{sid}")
+def end_session(sid:str):
+    conn = session_conns.pop(sid,None)
     if conn:
         with conn.cursor() as cur:
             cur.execute("DELETE FROM session_food WHERE session_id=%s", (sid,))
